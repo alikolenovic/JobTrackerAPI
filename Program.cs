@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Identity;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<JobTrackerDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add other necessary services and middlewares
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -20,40 +24,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// Ensure routing is properly enabled
 app.UseRouting();
+app.UseAuthorization();  // Ensure Authorization middleware is present
 
-// Ensure that the app maps controller routes
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();  // This ensures API controllers are mapped
-});
-
-// This is an example of the existing MapGet for the weather data
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+// Map controller endpoints
+app.MapControllers();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
