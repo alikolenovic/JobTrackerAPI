@@ -30,6 +30,9 @@ build/
 packages/
 node_modules/
 
+# Ignore Dev
+appsettings.Development.json
+
 # Ignore Rider files
 .idea/
 .idea_modules/
