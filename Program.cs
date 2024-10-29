@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Azure.Security.KeyVault.Secrets;
-using Azure.Identity;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Identity.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +14,11 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
+    // Connect to SQL
     builder.Services.AddDbContext<JobTrackerDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")));
+
+    // Set up Redis
     builder.Services.AddStackExchangeRedisCache(options =>
     {
     options.Configuration = builder.Configuration["AZURE_REDIS_CONNECTIONSTRING"];
@@ -24,6 +26,14 @@ else
     });
 }
 
+// Configure Azure AD B2C authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddMicrosoftIdentityWebApi(options =>
+    {
+        builder.Configuration.Bind("AzureAdB2C", options);
+        options.TokenValidationParameters.NameClaimType = "name"; // Use "name" as the unique identifier in tokens
+    },
+    options => { builder.Configuration.Bind("AzureAdB2C", options); });
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -32,6 +42,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment()) {
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 app.UseRouting();
