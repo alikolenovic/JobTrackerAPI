@@ -30,15 +30,6 @@ else
     });
 }
 
-// Configure Azure AD B2C authentication
-// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-//     .AddMicrosoftIdentityWebApi(options =>
-//     {
-//         builder.Configuration.Bind("AzureAdB2C", options);
-//         options.TokenValidationParameters.NameClaimType = "name"; // Use "name" as the unique identifier in tokens
-//     },
-//     options => { builder.Configuration.Bind("AzureAdB2C", options); });
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
 
@@ -56,29 +47,15 @@ builder.Services
     .AddFiltering() // For filtering support
     .AddSorting();  // For sorting support
 
-// Add services to the container.
-builder.Services.AddControllers();
-// Add other necessary services and middlewares
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
 var app = builder.Build();
 
-app.MapGraphQL("/graphql");
-
-if (app.Environment.IsDevelopment()) {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseHttpsRedirection();
-
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();  // Ensure Authorization middleware is present
 
 // Map controller endpoints
-app.MapControllers();
+app.MapGraphQL("/graphql");
 
 app.Run();
