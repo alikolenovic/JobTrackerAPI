@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using HotChocolate.AspNetCore;
+using HotChocolate.AspNetCore.Extensions;
 using Microsoft.Identity.Web;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Identity.Web.UI;
@@ -45,6 +47,15 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = options.DefaultPolicy;
 });
 
+// Configure GraphQL
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<JobQueries>()
+    .AddMutationType<JobMutations>()
+    .AddType<JobType>()
+    .AddFiltering() // For filtering support
+    .AddSorting();  // For sorting support
+
 // Add services to the container.
 builder.Services.AddControllers();
 // Add other necessary services and middlewares
@@ -52,6 +63,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.MapGraphQL("/graphql");
 
 if (app.Environment.IsDevelopment()) {
     app.UseSwagger();
