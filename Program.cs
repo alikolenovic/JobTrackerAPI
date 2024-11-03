@@ -1,25 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using HotChocolate.AspNetCore;
-using HotChocolate.AspNetCore.Extensions;
 using Microsoft.Identity.Web;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Identity.Web.UI;
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 // Configure the HTTP request pipeline.
 if (builder.Environment.IsDevelopment())
 {
-    builder.Services.AddDbContext<JobTrackerDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("MyDbConnection")));
-    builder.Services.AddDistributedMemoryCache();
+    builder.Services.AddPooledDbContextFactory<JobTrackerDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 }
 else
 {
     // Connect to SQL
-    builder.Services.AddDbContext<JobTrackerDbContext>(options =>
+    builder.Services.AddPooledDbContextFactory<JobTrackerDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING")));
 
     // Set up Redis
@@ -41,11 +35,12 @@ builder.Services.AddAuthorization(options =>
 // Configure GraphQL
 builder.Services
     .AddGraphQLServer()
+    .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true)
     .AddQueryType<JobQueries>()
     .AddMutationType<JobMutations>()
     .AddType<JobType>()
-    .AddFiltering() // For filtering support
-    .AddSorting();  // For sorting support
+    .AddFiltering()
+    .AddSorting();
 
 var app = builder.Build();
 
@@ -56,6 +51,6 @@ app.UseAuthentication();
 app.UseAuthorization();  // Ensure Authorization middleware is present
 
 // Map controller endpoints
-app.MapGraphQL("/graphql");
+app.MapGraphQL();
 
 app.Run();

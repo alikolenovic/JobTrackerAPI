@@ -1,14 +1,23 @@
+using Microsoft.EntityFrameworkCore;
+
 public class JobQueries
 {
-    private readonly JobTrackerDbContext _context;
+    private readonly IDbContextFactory<JobTrackerDbContext> _contextFactory;
 
-    public JobQueries(JobTrackerDbContext context)
+    public JobQueries(IDbContextFactory<JobTrackerDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
-    [UseProjection]
-    public IQueryable<Job> GetJobs() => _context.Jobs;
+    public async Task<List<Job>> GetJobsAsync()
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return await context.Jobs.ToListAsync();
+    }
 
-    public Job GetJob(int id) => _context.Jobs.Find(id);
+    public async Task<Job?> GetJobAsync(int id)
+    {
+        using var context = _contextFactory.CreateDbContext();
+        return await context.Jobs.FindAsync(id);
+    }
 }
