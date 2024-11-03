@@ -35,6 +35,12 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddPooledDbContextFactory<JobTrackerDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+     // Use local Redis for development - Make sure to run the docker image
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = "localhost:6379";
+    });
 }
 else
 {
@@ -45,10 +51,13 @@ else
     // Set up Redis
     builder.Services.AddStackExchangeRedisCache(options =>
     {
-    options.Configuration = builder.Configuration["AZURE_REDIS_CONNECTIONSTRING"];
-    options.InstanceName = "SampleInstance";
+        options.Configuration = builder.Configuration["AZURE_REDIS_CONNECTIONSTRING"];
+        options.InstanceName = "SampleInstance";
     });
 }
+
+// Register JobQueries as a scoped service
+builder.Services.AddScoped<JobQueries>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
