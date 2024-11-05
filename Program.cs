@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
+using JobTrackerAPI.GraphQL.Mutations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,8 +57,14 @@ else
     });
 }
 
-// Register JobQueries as a scoped service
-builder.Services.AddScoped<JobQueries>();
+
+builder.Services.AddHttpContextAccessor();
+
+// Register scoped services
+builder.Services.AddScoped<JobService>();
+builder.Services.AddScoped<JobMutations>();
+builder.Services.AddScoped<UserMutations>();
+builder.Services.AddScoped<Mutation>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAdB2C"));
@@ -71,9 +78,12 @@ builder.Services.AddAuthorization(options =>
 builder.Services
     .AddGraphQLServer()
     .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true)
-    .AddQueryType<JobQueries>()
-    .AddMutationType<JobMutations>()
+    .AddQueryType<Query>()
+    .AddMutationType<Mutation>()
+        .AddTypeExtension<JobMutations>()
+        .AddTypeExtension<UserMutations>() 
     .AddType<JobType>()
+    .AddType<UserType>()
     .AddFiltering()
     .AddSorting();
 
@@ -96,9 +106,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthentication();
-app.UseAuthorization();  // Ensure Authorization middleware is present
+app.UseAuthorization();
 
-// Map controller endpoints
 app.MapGraphQL();
 
 app.Run();

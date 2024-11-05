@@ -1,22 +1,25 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Identity.Web;
 
 public class JobQueries
 {
     private readonly IDbContextFactory<JobTrackerDbContext> _contextFactory;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IDistributedCache _cache;
 
-     private readonly IDistributedCache _cache;
-
-    public JobQueries(IDbContextFactory<JobTrackerDbContext> contextFactory, IDistributedCache cache)
+    public JobQueries(IDbContextFactory<JobTrackerDbContext> contextFactory, IHttpContextAccessor httpContextAccessor, IDistributedCache cache)
     {
         _contextFactory = contextFactory;
+        _httpContextAccessor = httpContextAccessor;
         _cache = cache;
     }
 
     public async Task<JobResponse> GetJobsAsync()
     {
-        const string cacheKey = "jobs"; // Cache key to identify the data
+        var oid = _httpContextAccessor.HttpContext?.User?.GetObjectId();
+        string cacheKey = $"user/{oid}/jobs"; // Cache key to identify the data
         var cachedJobs = await _cache.GetStringAsync(cacheKey);
 
         if (!string.IsNullOrEmpty(cachedJobs))
@@ -30,6 +33,8 @@ public class JobQueries
 
         // If cache is empty, fetch data from the database
         using var context = _contextFactory.CreateDbContext();
+        
+        // Retrieve the user and include their jobs
         var jobs = await context.Jobs.ToListAsync();
 
         // Set cache options (e.g., expiration time)

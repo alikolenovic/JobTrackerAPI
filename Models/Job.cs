@@ -1,7 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 public class Job
 {
-    public int Id { get; set; }
-    public required string Title { get; set; }
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public int JobId { get; set; }
+    public required string JobTitle { get; set; }
+    public required string JobDescription { get; set; }
     public required string Company { get; set; }
-    public DateTime DateApplied { get; set; }
+    public required string Status { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    // Foreign key to User
+    public System.Guid UserId { get; set; }
+
+    public User User {get; set;}
 }
